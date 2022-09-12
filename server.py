@@ -1,4 +1,4 @@
-import json
+import json, pdb
 from flask import Flask,render_template,request,redirect,flash,url_for
 
 CLUB_FILE = 'clubs.json'
@@ -41,25 +41,18 @@ def load_and_rewrite_Clubs(club_name, points_to_deduct, place_value):
     # 1) On ouvre le fichier json en mode write
     # 2) on sélectionne l'endroit où il y a les points du club
     # 3) on déduit le bon nombre de points du club
-    points_to_deduct = points_to_deduct - place_value
+    points_to_deduct = points_to_deduct * place_value
     with open("{}".format(CLUB_FILE), "r") as jsonFile:
-        data = json.load(jsonFile)['clubs']
+        data = json.load(jsonFile)
 
     club_index = find_list_of_dict_index(clubs, club_name)
-    current_points = int(data[club_index]["points"])
+    current_points = int(data['clubs'][club_index]["points"])
 
-    data[club_index]["points"] = str(current_points - points_to_deduct)
+    data['clubs'][club_index]["points"] = str(current_points - points_to_deduct)
 
     with open("{}".format(CLUB_FILE), "w") as jsonFile:
-        json.dump(data, jsonFile)
+        json.dump(data, jsonFile, indent=4)
 
-    # probleme pour l'instant est qu'on obtient le club_name et pas le club index pour
-    # retrouver le club dans la liste des clubs
-    # voir si il y a une fonction pour chercher la key d'un dictionnaire à partir de
-    # sa value, comme ça pourra chercher un club dans notre fichier json à partir
-    # de sa key qu'on peut facilement obtenir avec le club passé en paramètre
-    # alternativement, est-ce qu'il y aurait moyen juste avec le club de trouver
-    # l'endroit du dictionnaire clubs ou on est ?
 
 PLACE_VALUE = 1
 
@@ -94,6 +87,9 @@ def can_purchase(club, competition, num_places, place_value):
     if int(club["points"]) < new_places:
         flash("Your club doesn't have enough points to book this number of places")
         return False
+    elif (int(competition['numberOfPlaces']) - num_places) < 0:
+        flash("There is not enough places left to book this number of places")
+        return False
     else:
         return True
     # Cette fonction pourrait aider la logique de la view purchase en tant que helper
@@ -108,7 +104,7 @@ def purchasePlaces():
     club = [c for c in clubs if c['name'] == request.form['club']][0]
     placesRequired = int(request.form['places'])
     if can_purchase(club, competition, placesRequired, PLACE_VALUE):
-        load_and_rewrite_Clubs(club, placesRequired, PLACE_VALUE)
+        load_and_rewrite_Clubs(club['name'], placesRequired, PLACE_VALUE)
         flash('Great-booking complete!')
     else:
         flash("Sorry, you don't have enough points to book these places")

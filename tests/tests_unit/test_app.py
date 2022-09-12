@@ -111,53 +111,36 @@ class TestPurchase():
         with open("{}".format(CLUB_FILE), "r") as jsonFile:
             clubs_data = json.load(jsonFile)
         self.clubs = clubs_data
-        print("setup_method est bien appelée, voici ses clubs")
-        print(self.clubs)
 
+    # def test_should_buy_places(self, client):
+    #     # Il faut ici vérifier que si on envoie un club, un festival et un nb de places,
+    #     # en fonction du nombre de places dans le fichier json competitions
+    #     # et du nombre de points du club (prévoir un multiplieur de nb de points 
+    #     # nécessaire) dans le fichier json clubs, il y a 
+    #     # 1 une bonne redirection
+    #     # 2 un nombre de points déduit du club
+    #     # 3 un nombre de place déduit de la competition
 
-    
-    def test_should_buy_places(self, client):
-        # Il faut ici vérifier que si on envoie un club, un festival et un nb de places,
-        # en fonction du nombre de places dans le fichier json competitions
-        # et du nombre de points du club (prévoir un multiplieur de nb de points 
-        # nécessaire) dans le fichier json clubs, il y a 
-        # 1 une bonne redirection
-        # 2 un nombre de points déduit du club
-        # 3 un nombre de place déduit de la competition
-
-        # Il faut penser à mocker : renvoyer une constance qui sera installée
-        # ensuite dans views qui est le nombre de points nécessaires pour booker
-        # une compétition.
-        data = {"competition":'Spring Festival', "club":"Simply Lift", "places":"1"}
-        response = client.post('/purchasePlaces', data=data)
-        assert response.status_code == 200
-
-    def test_enough_place_in_competition_to_book(self, client, Competitions_Fixture, 
+    def test_enough_points_to_book(self, client, Competitions_Fixture, 
                                         Clubs_Fixture):
         
-        test_comp = Competitions_Fixture[0]
-        test_club = Clubs_Fixture[0]
+        test_comp = Competitions_Fixture[0]["name"]
+        test_club = Clubs_Fixture[0]["name"]
         places_to_buy = 1
-        # here is the value of a ticket mais devrait plutôt être dans server.py en fait
-
         ticket_value = 1
         
         # ICI UTILISER LE MOCK DES CONSTANTES CLUB_FILE ET COMP_FILE
         # AFIN QUE LA DATABASE MODIFIEE SOIT BIEN NOS FICHIERS JSON TEMPORAIRES
         # CREES AVEC NOS FIXTURES Competitions_Fixture, Clubs_Fixture
                                         
-
-        # Il faudrait ici modifier cette reponse et ce client.post pour que 
-        # l'information passe plutôt dans notre test et pas la view,
-        # ou alors qu'on puisse mocker le comportement de la view et donc l'écriture
-        # du fichier ensuite
-        response = client.post('/purchasePlaces', data={"competition": test_comp[0],
-                                                        "club": test_club[0],
-                                                        "places":places_to_buy})
+        response = client.post('/purchasePlaces', data={'competition': test_comp,
+                                                        'club': test_club,
+                                                        'places':places_to_buy})
         assert response.status_code == 200
         # on vérifie que les points on bien été déduits du fichier clubs.json
         with open("{}".format(CLUB_FILE), "r") as jsonFile:
-            club_points = json.load(jsonFile)["clubs"][0]["points"]
+            jFile = json.load(jsonFile)
+            club_points = jFile["clubs"][0]["points"]
 
         original_club_points = int(self.clubs["clubs"][0]["points"])
         
@@ -206,12 +189,10 @@ class TestPurchase():
         with open("{}".format(CLUB_FILE), "r") as jsonFile:
             clubs_data = json.load(jsonFile)
         
-        print("teardown_method est bien appelée, voici ses clubs à la fin")
-        print(clubs_data)
         clubs_data["clubs"] = self.clubs["clubs"]
 
         with open("{}".format(CLUB_FILE), "w") as jsonFile:
-            json.dump(clubs_data, jsonFile)
+            json.dump(clubs_data, jsonFile, indent=4)
 
 class TestLogout():
 
