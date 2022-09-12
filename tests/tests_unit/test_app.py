@@ -149,7 +149,28 @@ class TestPurchase():
         # le nombre de places que le club veut acheter 3 que le club a assez de points
         # pour acheter ce nombre de places
 
+    def test_enough_places_left_to_book(self, client, Competitions_Fixture, 
+                                        Clubs_Fixture):
 
+        test_comp = Competitions_Fixture[0]["name"]
+        test_club = Clubs_Fixture[0]["name"]
+        places_to_buy = 500
+        ticket_value = 1
+        
+        # ICI UTILISER LE MOCK DES CONSTANTES CLUB_FILE ET COMP_FILE
+        # AFIN QUE LA DATABASE MODIFIEE SOIT BIEN NOS FICHIERS JSON TEMPORAIRES
+        # CREES AVEC NOS FIXTURES Competitions_Fixture, Clubs_Fixture
+                                        
+        response = client.post('/purchasePlaces', data={'competition': test_comp,
+                                                        'club': test_club,
+                                                        'places':places_to_buy})
+        assert response.status_code == 200
+
+        with open("{}".format(CLUB_FILE), "r") as jsonFile:
+            jFile = json.load(jsonFile)
+            club_points = jFile["clubs"][0]["points"]
+
+        assert club_points == self.clubs["clubs"][0]["points"]
         # on vérifie ensuite que le fichier json a bien été réécris si il le nombre
         # de places et de points était correct
         # Pour se faire je peux créer dans server.py les fonctions rewriteClubs et
