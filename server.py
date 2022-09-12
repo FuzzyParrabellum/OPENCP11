@@ -106,8 +106,6 @@ def purchasePlaces():
     if can_purchase(club, competition, placesRequired, PLACE_VALUE):
         load_and_rewrite_Clubs(club['name'], placesRequired, PLACE_VALUE)
         flash('Great-booking complete!')
-    else:
-        flash("Sorry, you don't have enough points to book these places")
     # competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-placesRequired
     return render_template('welcome.html', club=club, competitions=competitions)
 
