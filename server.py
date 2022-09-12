@@ -1,6 +1,8 @@
 import json
 from flask import Flask,render_template,request,redirect,flash,url_for
 
+CLUB_FILE = 'clubs.json'
+COMP_FILE = 'competitions.json'
 
 def loadClubs():
     with open('clubs.json') as c:
@@ -13,12 +15,57 @@ def loadCompetitions():
          listOfCompetitions = json.load(comps)['competitions']
          return listOfCompetitions
 
+competitions = loadCompetitions()
+clubs = loadClubs()
+
+def find_list_of_dict_index(list_of_dict, name):
+    index = 0
+    for dict in list_of_dict:
+        if name in dict.values():
+            return index
+        index += 1
+
+def load_and_rewrite_Competitions(comp_name, num_places):
+    # Cette fonction prend en paramètre le lien vers le fichier json à utiliser pr
+    # le test
+    # Elle prend également en paramètres l'index de la competition à réecrire et le
+    # nombre de places à booker
+    # Ensuite elle enlève le nombre de places correspondantes
+    pass
+
+def load_and_rewrite_Clubs(club_name, points_to_deduct, place_value):
+    # Cette fonction prend en paramètre le lien vers le fichier json à utiliser pr le
+    # test
+    # Elle prend également en paramètre l'index du club à réecrire et le nombre de 
+    # places que le club aimerait booker
+    # 1) On ouvre le fichier json en mode write
+    # 2) on sélectionne l'endroit où il y a les points du club
+    # 3) on déduit le bon nombre de points du club
+    points_to_deduct = points_to_deduct - place_value
+    with open("{}".format(CLUB_FILE), "r") as jsonFile:
+        data = json.load(jsonFile)['clubs']
+
+    club_index = find_list_of_dict_index(clubs, club_name)
+    current_points = int(data[club_index]["points"])
+
+    data[club_index]["points"] = str(current_points - points_to_deduct)
+
+    with open("{}".format(CLUB_FILE), "w") as jsonFile:
+        json.dump(data, jsonFile)
+
+    # probleme pour l'instant est qu'on obtient le club_name et pas le club index pour
+    # retrouver le club dans la liste des clubs
+    # voir si il y a une fonction pour chercher la key d'un dictionnaire à partir de
+    # sa value, comme ça pourra chercher un club dans notre fichier json à partir
+    # de sa key qu'on peut facilement obtenir avec le club passé en paramètre
+    # alternativement, est-ce qu'il y aurait moyen juste avec le club de trouver
+    # l'endroit du dictionnaire clubs ou on est ?
+
+PLACE_VALUE = 1
 
 app = Flask(__name__)
 app.secret_key = 'something_special'
 
-competitions = loadCompetitions()
-clubs = loadClubs()
 
 @app.route('/')
 def index():
@@ -41,13 +88,31 @@ def book(competition,club):
         return render_template('welcome.html', club=club, competitions=competitions)
 
 
+def can_purchase(club, competition, num_places, place_value):
+
+    new_places = num_places*place_value
+    if int(club["points"]) < new_places:
+        flash("Your club doesn't have enough points to book this number of places")
+        return False
+    else:
+        return True
+    # Cette fonction pourrait aider la logique de la view purchase en tant que helper
+    # Elle vérifie à partir de 2 paramètres, clubs et competitions, 
+    # si un club a bien le bon nombre de points
+    # pour purchase le nombre de places qu'il veut, si il reste toujours des places
+    # dans la compétition, si le club peut prendre le bon nombre de places
+
 @app.route('/purchasePlaces',methods=['POST'])
 def purchasePlaces():
     competition = [c for c in competitions if c['name'] == request.form['competition']][0]
     club = [c for c in clubs if c['name'] == request.form['club']][0]
     placesRequired = int(request.form['places'])
-    competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-placesRequired
-    flash('Great-booking complete!')
+    if can_purchase(club, competition, placesRequired, PLACE_VALUE):
+        load_and_rewrite_Clubs(club, placesRequired, PLACE_VALUE)
+        flash('Great-booking complete!')
+    else:
+        flash("Sorry, you don't have enough points to book these places")
+    # competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-placesRequired
     return render_template('welcome.html', club=club, competitions=competitions)
 
 

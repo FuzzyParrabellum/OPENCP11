@@ -1,16 +1,20 @@
 from ..conftest import client
 from ..conftest import app_fixture as app
-import pytest
-from Python_Testing.server import loadClubs, loadCompetitions
+import pytest, json
+from Python_Testing.server import loadClubs, loadCompetitions, CLUB_FILE, COMP_FILE
 from flask import url_for, request, Flask
+
 
 
 # Fixture des Clubs et des Compétitions
 @pytest.fixture
 def Clubs_Fixture():
-    data = [{'name': 'Simply Lift', 'email': 'john@simplylift.co', 'points': '13'}, 
-    {'name': 'Iron Temple', 'email': 'admin@irontemple.com', 'points': '4'}, 
-    {'name': 'She Lifts', 'email': 'kate@shelifts.co.uk', 'points': '12'}]
+    data = [{"name":"Simply Lift","email":"john@simplylift.co",
+        "points":"13"},
+        {"name":"Iron Temple","email": "admin@irontemple.com",
+        "points":"4"},
+        {"name":"She Lifts", "email": "kate@shelifts.co.uk",
+        "points":"12"}]
     return data
 
 @pytest.fixture
@@ -95,6 +99,22 @@ class TestBookCompetition():
 
 
 class TestPurchase():
+
+    def setup_method(self, method):
+        # Création de deux fichiers json temporaires ou non où on va écrire 
+        # sur le fichier nos deux fixtures competitions et clubs
+
+
+        # Autre option, on ouvre ici le contenu du fichier json de base et on en
+        # copie le contenu
+        # pour ensuite le réécrire dans la méthode teardown
+        with open("{}".format(CLUB_FILE), "r") as jsonFile:
+            clubs_data = json.load(jsonFile)
+        self.clubs = clubs_data
+        print("setup_method est bien appelée, voici ses clubs")
+        print(self.clubs)
+
+
     
     def test_should_buy_places(self, client):
         # Il faut ici vérifier que si on envoie un club, un festival et un nb de places,
@@ -121,7 +141,11 @@ class TestPurchase():
         # here is the value of a ticket mais devrait plutôt être dans server.py en fait
 
         ticket_value = 1
-        places_to_buy = places_to_buy*ticket_value
+        
+        # ICI UTILISER LE MOCK DES CONSTANTES CLUB_FILE ET COMP_FILE
+        # AFIN QUE LA DATABASE MODIFIEE SOIT BIEN NOS FICHIERS JSON TEMPORAIRES
+        # CREES AVEC NOS FIXTURES Competitions_Fixture, Clubs_Fixture
+                                        
 
         # Il faudrait ici modifier cette reponse et ce client.post pour que 
         # l'information passe plutôt dans notre test et pas la view,
@@ -130,9 +154,18 @@ class TestPurchase():
         response = client.post('/purchasePlaces', data={"competition": test_comp[0],
                                                         "club": test_club[0],
                                                         "places":places_to_buy})
+        assert response.status_code == 200
+        # on vérifie que les points on bien été déduits du fichier clubs.json
+        with open("{}".format(CLUB_FILE), "r") as jsonFile:
+            club_points = json.load(jsonFile)["clubs"][0]["points"]
+
+        original_club_points = int(self.clubs["clubs"][0]["points"])
+        
+        assert original_club_points - (places_to_buy*ticket_value) == int(club_points)
         # on vérifie 1 qu'il reste des places 2 qu'il reste assez de places pour
         # le nombre de places que le club veut acheter 3 que le club a assez de points
         # pour acheter ce nombre de places
+
 
         # on vérifie ensuite que le fichier json a bien été réécris si il le nombre
         # de places et de points était correct
@@ -169,7 +202,16 @@ class TestPurchase():
         # avec un message d'erreur si elle est passée
 
 
+    def teardown_method(self, method):
+        with open("{}".format(CLUB_FILE), "r") as jsonFile:
+            clubs_data = json.load(jsonFile)
+        
+        print("teardown_method est bien appelée, voici ses clubs à la fin")
+        print(clubs_data)
+        clubs_data["clubs"] = self.clubs["clubs"]
 
+        with open("{}".format(CLUB_FILE), "w") as jsonFile:
+            json.dump(clubs_data, jsonFile)
 
 class TestLogout():
 
@@ -181,4 +223,20 @@ class TestLogout():
 
 
 
-
+# contenu de clubs.json
+# {"clubs":[
+#     {
+#         "name":"Simply Lift",
+#         "email":"john@simplylift.co",
+#         "points":"13"
+#     },
+#     {
+#         "name":"Iron Temple",
+#         "email": "admin@irontemple.com",
+#         "points":"4"
+#     },
+#     {   "name":"She Lifts",
+#         "email": "kate@shelifts.co.uk",
+#         "points":"12"
+#     }
+# ]}
