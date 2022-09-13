@@ -1,5 +1,6 @@
 import json, pdb
 from flask import Flask,render_template,request,redirect,flash,url_for
+from datetime import datetime
 
 CLUB_FILE = 'clubs.json'
 COMP_FILE = 'competitions.json'
@@ -83,12 +84,19 @@ def book(competition,club):
 
 def can_purchase(club, competition, num_places, place_value):
 
+    format_string = "%Y-%m-%d %H:%M:%S"
+    competition_time = datetime.strptime(competition["date"], format_string)
+    current_time = datetime.now()
+
     new_places = num_places*place_value
     if int(club["points"]) < new_places:
         flash("Your club doesn't have enough points to book this number of places")
         return False
     elif (int(competition['numberOfPlaces']) - num_places) < 0:
         flash("There is not enough places left to book this number of places")
+        return False
+    elif current_time > competition_time:
+        flash("This competition is already over, you can't book it")
         return False
     else:
         return True
