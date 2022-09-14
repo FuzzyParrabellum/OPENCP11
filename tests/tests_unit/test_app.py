@@ -63,7 +63,6 @@ class TestSummary():
         # fait planter l'appli, il faudrait plutôt que ça renvoie un msg d'erreur et qu'on
         # revienne sur l'index je pense
         response = client.post('/showSummary', data={'email':'test@wrong-email.co'})
-        pdb.set_trace()
         assert response.headers["Location"] == "/"
 
 class TestBookCompetition():
@@ -146,7 +145,7 @@ class TestPurchase():
             club_points = jFile["clubs"][0]["points"]
 
         original_club_points = int(self.clubs["clubs"][0]["points"])
-        
+        print(response.data.decode())
         assert original_club_points - (places_to_buy*ticket_value) == int(club_points)
         # on vérifie 1 qu'il reste des places 2 qu'il reste assez de places pour
         # le nombre de places que le club veut acheter 3 que le club a assez de points

@@ -4,6 +4,9 @@ from datetime import datetime
 
 CLUB_FILE = 'clubs.json'
 COMP_FILE = 'competitions.json'
+# If you want to set the current_time to now
+CURRENT_TIME = datetime.now()
+# If you want to set the current_time to before the competitions in the json file
 
 def loadClubs():
     with open('clubs.json') as c:
@@ -74,11 +77,18 @@ app.secret_key = 'something_special'
 def index():
     return render_template('index.html')
 
+
 @app.route('/showSummary',methods=['POST'])
 def showSummary():
-    club = [club for club in clubs if club['email'] == request.form['email']][0]
-    return render_template('welcome.html',club=club,competitions=competitions, \
-                                            clubs=clubs)
+    for club in clubs:
+        if club['email'] == request.form['email']:
+            return render_template('welcome.html',club=club,competitions=competitions)
+    flash("There wasn't any club with this email in our database")
+    return redirect(url_for('index'))
+# @app.route('/showSummary',methods=['POST'])
+# def showSummary():
+#     club = [club for club in clubs if club['email'] == request.form['email']][0]
+#     return render_template('welcome.html',club=club,competitions=competitions))
 
 
 @app.route('/book/<competition>/<club>')
@@ -96,8 +106,6 @@ def can_purchase(club, competition, num_places, place_value):
 
     format_string = "%Y-%m-%d %H:%M:%S"
     competition_time = datetime.strptime(competition["date"], format_string)
-    current_time = datetime.now()
-
     new_places = num_places*place_value
     if int(club["points"]) < new_places:
         flash("Your club doesn't have enough points to book this number of places")
@@ -105,7 +113,7 @@ def can_purchase(club, competition, num_places, place_value):
     elif (int(competition['numberOfPlaces']) - num_places) < 0:
         flash("There is not enough places left to book this number of places")
         return False
-    elif current_time > competition_time:
+    elif CURRENT_TIME > competition_time:
         flash("This competition is already over, you can't book it")
         return False
     else:
@@ -121,10 +129,12 @@ def purchasePlaces():
     competition = [c for c in competitions if c['name'] == request.form['competition']][0]
     club = [c for c in clubs if c['name'] == request.form['club']][0]
     placesRequired = int(request.form['places'])
+    print("!!!!!!!!PURCHASE PLACE EST BIEN APPELLE!!!!!!!!!!!!")
     if placesRequired > 12:
         flash("you can't book more than twelve places at once !")
         return render_template('welcome.html', club=club, competitions=competitions)
     if can_purchase(club, competition, placesRequired, PLACE_VALUE):
+        print("!!!!!!!!!CANPURCHASE EST BIEN APPELLEE!!!!!!!!!!!!!!")
         load_and_rewrite_Clubs(club['name'], placesRequired, PLACE_VALUE)
         load_and_rewrite_Competitions(competition['name'], placesRequired)
         flash('Great-booking complete!')
