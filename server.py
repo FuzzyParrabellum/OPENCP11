@@ -68,7 +68,8 @@ def index():
 @app.route('/showSummary',methods=['POST'])
 def showSummary():
     club = [club for club in clubs if club['email'] == request.form['email']][0]
-    return render_template('welcome.html',club=club,competitions=competitions)
+    return render_template('welcome.html',club=club,competitions=competitions, \
+                                            clubs=clubs)
 
 
 @app.route('/book/<competition>/<club>')
@@ -119,7 +120,9 @@ def purchasePlaces():
 
 
 # TODO: Add route for points display
-
+@app.route('/displayBoard',methods=['GET'])
+def displayBoard():
+    return render_template('display_board.html', clubs=clubs)
 
 @app.route('/logout')
 def logout():
