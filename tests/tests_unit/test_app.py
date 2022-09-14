@@ -63,6 +63,7 @@ class TestSummary():
         # fait planter l'appli, il faudrait plutôt que ça renvoie un msg d'erreur et qu'on
         # revienne sur l'index je pense
         response = client.post('/showSummary', data={'email':'test@wrong-email.co'})
+        pdb.set_trace()
         assert response.headers["Location"] == "/"
 
 class TestBookCompetition():
@@ -109,6 +110,10 @@ class TestPurchase():
         with open("{}".format(CLUB_FILE), "r") as jsonFile:
             clubs_data = json.load(jsonFile)
         self.clubs = clubs_data
+
+        with open("{}".format(COMP_FILE), "r") as jsonFile:
+            competitions_data = json.load(jsonFile)
+        self.competitions = competitions_data
 
     # def test_should_buy_places(self, client):
     #     # Il faut ici vérifier que si on envoie un club, un festival et un nb de places,
@@ -208,6 +213,48 @@ class TestPurchase():
         # une compétition qui a lieu plus tard genre datetime.now() + 1 day, pour
         # se faire doit créer une fausse compétition
 
+    def test_competitions_places_can_get_deducted(self, client, Competitions_Fixture, 
+                                    Clubs_Fixture):
+        test_comp = Competitions_Fixture[0]["name"]
+        test_club = Clubs_Fixture[0]["name"]
+        places_to_buy = 1
+                      
+        response = client.post('/purchasePlaces', data={'competition': test_comp,
+                                                        'club': test_club,
+                                                        'places':places_to_buy})
+        assert response.status_code == 200
+        # on vérifie que les points on bien été déduits du fichier clubs.json
+        with open("{}".format(COMP_FILE), "r") as jsonFile:
+            jFile = json.load(jsonFile)
+            competition_places = jFile["competitions"][0]["numberOfPlaces"]
+
+        original_comp_places = int(self.competitions["competitions"][0]["numberOfPlaces"])
+        
+        assert original_comp_places - places_to_buy == int(competition_places)
+
+    def test_cant_book_more_than_twelve_places(self, client, Competitions_Fixture, 
+                                    Clubs_Fixture):
+        test_comp = Competitions_Fixture[0]["name"]
+        test_club = Clubs_Fixture[0]["name"]
+        places_to_buy = 13
+        
+        # Verify in front-end that user can't select more than 12 places
+        response = client.get(f'/book/{test_comp}/{test_club}')
+        data = response.data.decode()
+        assert '<input type="number" name="places" min="1" max="12" id=""/>' in data
+
+        # Verify in back-end that purchasing more than 12 places at once isn't possible,
+        # and that competitions places aren't deducted
+        response = client.post('/purchasePlaces', data={'competition': test_comp,
+                                                        'club': test_club,
+                                                        'places':places_to_buy})
+        assert response.status_code == 200
+
+        with open("{}".format(COMP_FILE), "r") as jsonFile:
+            jFile = json.load(jsonFile)
+            competition_points = jFile["competitions"][0]["numberOfPlaces"]
+
+        assert competition_points == self.competitions["competitions"][0]["numberOfPlaces"]
 
         # on vérifie ensuite que le fichier json a bien été réécris si il le nombre
         # de places et de points était correct
@@ -252,6 +299,14 @@ class TestPurchase():
 
         with open("{}".format(CLUB_FILE), "w") as jsonFile:
             json.dump(clubs_data, jsonFile, indent=4)
+
+        with open("{}".format(COMP_FILE), "r") as jsonFile:
+            competitions_data = json.load(jsonFile)
+        
+        competitions_data["competitions"] = self.competitions["competitions"]
+
+        with open("{}".format(COMP_FILE), "w") as jsonFile:
+            json.dump(competitions_data, jsonFile, indent=4)
 
 class TestLogout():
 

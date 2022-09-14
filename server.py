@@ -32,7 +32,16 @@ def load_and_rewrite_Competitions(comp_name, num_places):
     # Elle prend également en paramètres l'index de la competition à réecrire et le
     # nombre de places à booker
     # Ensuite elle enlève le nombre de places correspondantes
-    pass
+    with open("{}".format(COMP_FILE), "r") as jsonFile:
+        data = json.load(jsonFile)
+
+    comp_index = find_list_of_dict_index(competitions, comp_name)
+    current_places = int(data['competitions'][comp_index]["numberOfPlaces"])
+
+    data['competitions'][comp_index]["numberOfPlaces"] = str(current_places - num_places)
+
+    with open("{}".format(COMP_FILE), "w") as jsonFile:
+        json.dump(data, jsonFile, indent=4)
 
 def load_and_rewrite_Clubs(club_name, points_to_deduct, place_value):
     # Cette fonction prend en paramètre le lien vers le fichier json à utiliser pr le
@@ -112,8 +121,12 @@ def purchasePlaces():
     competition = [c for c in competitions if c['name'] == request.form['competition']][0]
     club = [c for c in clubs if c['name'] == request.form['club']][0]
     placesRequired = int(request.form['places'])
+    if placesRequired > 12:
+        flash("you can't book more than twelve places at once !")
+        return render_template('welcome.html', club=club, competitions=competitions)
     if can_purchase(club, competition, placesRequired, PLACE_VALUE):
         load_and_rewrite_Clubs(club['name'], placesRequired, PLACE_VALUE)
+        load_and_rewrite_Competitions(competition['name'], placesRequired)
         flash('Great-booking complete!')
     # competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-placesRequired
     return render_template('welcome.html', club=club, competitions=competitions)
