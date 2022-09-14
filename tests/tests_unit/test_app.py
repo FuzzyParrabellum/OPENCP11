@@ -41,9 +41,6 @@ def test_loadCompetitions(Competitions_Fixture):
 
 class TestIndex():
 
-    # def __init__(self, client):
-    #     self.client = client
-
     # Test pour montrer que la route est accessible
     def test_should_status_code_ok(self, client):
         response = client.get('/')
@@ -61,12 +58,12 @@ class TestSummary():
         assert response.status_code == 200
 
     # DECOMMENTER A LA FIN
-    # def test_should_redirect_wrong_email(self, client):
-    #     # il faut indiquer ce qui se passe quand on entre un mauvais email, pour l'instant
-    #     # fait planter l'appli, il faudrait plutôt que ça renvoie un msg d'erreur et qu'on
-    #     # revienne sur l'index je pense
-    #     response = client.post('/showSummary', data={'email':'test@wrong-email.co'})
-    #     assert response.headers["Location"] == "/"
+    def test_should_redirect_wrong_email(self, client):
+        # il faut indiquer ce qui se passe quand on entre un mauvais email, pour l'instant
+        # fait planter l'appli, il faudrait plutôt que ça renvoie un msg d'erreur et qu'on
+        # revienne sur l'index je pense
+        response = client.post('/showSummary', data={'email':'test@wrong-email.co'})
+        assert response.headers["Location"] == "/"
 
 class TestBookCompetition():
 
@@ -122,56 +119,56 @@ class TestPurchase():
     #     # 2 un nombre de points déduit du club
     #     # 3 un nombre de place déduit de la competition
 
-    # def test_enough_points_to_book(self, client, Competitions_Fixture, 
-    #                                     Clubs_Fixture):
+    def test_enough_points_to_book(self, client, Competitions_Fixture, 
+                                        Clubs_Fixture):
         
-    #     test_comp = Competitions_Fixture[0]["name"]
-    #     test_club = Clubs_Fixture[0]["name"]
-    #     places_to_buy = 1
-    #     ticket_value = 1
+        test_comp = Competitions_Fixture[0]["name"]
+        test_club = Clubs_Fixture[0]["name"]
+        places_to_buy = 1
+        ticket_value = 1
         
-    #     # ICI UTILISER LE MOCK DES CONSTANTES CLUB_FILE ET COMP_FILE
-    #     # AFIN QUE LA DATABASE MODIFIEE SOIT BIEN NOS FICHIERS JSON TEMPORAIRES
-    #     # CREES AVEC NOS FIXTURES Competitions_Fixture, Clubs_Fixture
+        # ICI UTILISER LE MOCK DES CONSTANTES CLUB_FILE ET COMP_FILE
+        # AFIN QUE LA DATABASE MODIFIEE SOIT BIEN NOS FICHIERS JSON TEMPORAIRES
+        # CREES AVEC NOS FIXTURES Competitions_Fixture, Clubs_Fixture
                                         
-    #     response = client.post('/purchasePlaces', data={'competition': test_comp,
-    #                                                     'club': test_club,
-    #                                                     'places':places_to_buy})
-    #     assert response.status_code == 200
-    #     # on vérifie que les points on bien été déduits du fichier clubs.json
-    #     with open("{}".format(CLUB_FILE), "r") as jsonFile:
-    #         jFile = json.load(jsonFile)
-    #         club_points = jFile["clubs"][0]["points"]
+        response = client.post('/purchasePlaces', data={'competition': test_comp,
+                                                        'club': test_club,
+                                                        'places':places_to_buy})
+        assert response.status_code == 200
+        # on vérifie que les points on bien été déduits du fichier clubs.json
+        with open("{}".format(CLUB_FILE), "r") as jsonFile:
+            jFile = json.load(jsonFile)
+            club_points = jFile["clubs"][0]["points"]
 
-    #     original_club_points = int(self.clubs["clubs"][0]["points"])
+        original_club_points = int(self.clubs["clubs"][0]["points"])
         
-    #     assert original_club_points - (places_to_buy*ticket_value) == int(club_points)
-    #     # on vérifie 1 qu'il reste des places 2 qu'il reste assez de places pour
-    #     # le nombre de places que le club veut acheter 3 que le club a assez de points
-    #     # pour acheter ce nombre de places
+        assert original_club_points - (places_to_buy*ticket_value) == int(club_points)
+        # on vérifie 1 qu'il reste des places 2 qu'il reste assez de places pour
+        # le nombre de places que le club veut acheter 3 que le club a assez de points
+        # pour acheter ce nombre de places
 
-    # def test_enough_places_left_to_book(self, client, Competitions_Fixture, 
-    #                                     Clubs_Fixture):
+    def test_enough_places_left_to_book(self, client, Competitions_Fixture, 
+                                        Clubs_Fixture):
 
-    #     test_comp = Competitions_Fixture[0]["name"]
-    #     test_club = Clubs_Fixture[0]["name"]
-    #     places_to_buy = 500
-    #     ticket_value = 1
+        test_comp = Competitions_Fixture[0]["name"]
+        test_club = Clubs_Fixture[0]["name"]
+        places_to_buy = 500
+        ticket_value = 1
         
-    #     # ICI UTILISER LE MOCK DES CONSTANTES CLUB_FILE ET COMP_FILE
-    #     # AFIN QUE LA DATABASE MODIFIEE SOIT BIEN NOS FICHIERS JSON TEMPORAIRES
-    #     # CREES AVEC NOS FIXTURES Competitions_Fixture, Clubs_Fixture
+        # ICI UTILISER LE MOCK DES CONSTANTES CLUB_FILE ET COMP_FILE
+        # AFIN QUE LA DATABASE MODIFIEE SOIT BIEN NOS FICHIERS JSON TEMPORAIRES
+        # CREES AVEC NOS FIXTURES Competitions_Fixture, Clubs_Fixture
                                         
-    #     response = client.post('/purchasePlaces', data={'competition': test_comp,
-    #                                                     'club': test_club,
-    #                                                     'places':places_to_buy})
-    #     assert response.status_code == 200
+        response = client.post('/purchasePlaces', data={'competition': test_comp,
+                                                        'club': test_club,
+                                                        'places':places_to_buy})
+        assert response.status_code == 200
 
-    #     with open("{}".format(CLUB_FILE), "r") as jsonFile:
-    #         jFile = json.load(jsonFile)
-    #         club_points = jFile["clubs"][0]["points"]
+        with open("{}".format(CLUB_FILE), "r") as jsonFile:
+            jFile = json.load(jsonFile)
+            club_points = jFile["clubs"][0]["points"]
 
-    #     assert club_points == self.clubs["clubs"][0]["points"]
+        assert club_points == self.clubs["clubs"][0]["points"]
 
     def test_competition_isnt_expired(self, client, Competitions_Fixture, 
                                         Clubs_Fixture, app):
