@@ -4,6 +4,7 @@ import pytest, json
 from Python_Testing.server import loadClubs, loadCompetitions, \
     CLUB_FILE, COMP_FILE,can_purchase
 from flask import url_for, request, Flask
+from datetime import datetime
 import pdb
 
 
@@ -114,6 +115,11 @@ class TestPurchase():
             competitions_data = json.load(jsonFile)
         self.competitions = competitions_data
 
+        format_string = "%Y-%m-%d %H:%M:%S"
+        test_time = "2015-03-27 10:00:00"
+        self.test_time = datetime.strptime(test_time, format_string)
+        self.current_time = datetime.now().strftime(format_string)
+
     # def test_should_buy_places(self, client):
     #     # Il faut ici vérifier que si on envoie un club, un festival et un nb de places,
     #     # en fonction du nombre de places dans le fichier json competitions
@@ -134,10 +140,11 @@ class TestPurchase():
         # ICI UTILISER LE MOCK DES CONSTANTES CLUB_FILE ET COMP_FILE
         # AFIN QUE LA DATABASE MODIFIEE SOIT BIEN NOS FICHIERS JSON TEMPORAIRES
         # CREES AVEC NOS FIXTURES Competitions_Fixture, Clubs_Fixture
-                                        
+                  
         response = client.post('/purchasePlaces', data={'competition': test_comp,
                                                         'club': test_club,
-                                                        'places':places_to_buy})
+                                                        'places':places_to_buy,
+                                                        'optionnal_time':self.test_time})
         assert response.status_code == 200
         # on vérifie que les points on bien été déduits du fichier clubs.json
         with open("{}".format(CLUB_FILE), "r") as jsonFile:
@@ -165,7 +172,8 @@ class TestPurchase():
                                         
         response = client.post('/purchasePlaces', data={'competition': test_comp,
                                                         'club': test_club,
-                                                        'places':places_to_buy})
+                                                        'places':places_to_buy,
+                                                        'optionnal_time':self.test_time})
         assert response.status_code == 200
 
         with open("{}".format(CLUB_FILE), "r") as jsonFile:
@@ -199,7 +207,8 @@ class TestPurchase():
 
         response = client.post('/purchasePlaces', data={'competition': test_comp["name"],
                                                         'club': test_club["name"],
-                                                        'places':places_to_buy})
+                                                        'places':places_to_buy,
+                                                        'optionnal_time':self.current_time})
 
         html_content = response.data.decode() 
         # mettre en dessous un assert en important la fonction canpurchase avec les
@@ -220,7 +229,8 @@ class TestPurchase():
                       
         response = client.post('/purchasePlaces', data={'competition': test_comp,
                                                         'club': test_club,
-                                                        'places':places_to_buy})
+                                                        'places':places_to_buy,
+                                                        'optionnal_time':self.test_time})
         assert response.status_code == 200
         # on vérifie que les points on bien été déduits du fichier clubs.json
         with open("{}".format(COMP_FILE), "r") as jsonFile:
@@ -246,7 +256,8 @@ class TestPurchase():
         # and that competitions places aren't deducted
         response = client.post('/purchasePlaces', data={'competition': test_comp,
                                                         'club': test_club,
-                                                        'places':places_to_buy})
+                                                        'places':places_to_buy,
+                                                        'optionnal_time':self.test_time})
         assert response.status_code == 200
 
         with open("{}".format(COMP_FILE), "r") as jsonFile:

@@ -73,6 +73,8 @@ app = Flask(__name__)
 app.secret_key = 'something_special'
 
 
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -102,10 +104,12 @@ def book(competition,club):
         return render_template('welcome.html', club=club, competitions=competitions)
 
 
-def can_purchase(club, competition, num_places, place_value):
+def can_purchase(club, competition, num_places, place_value, app_time=CURRENT_TIME):
 
     format_string = "%Y-%m-%d %H:%M:%S"
     competition_time = datetime.strptime(competition["date"], format_string)
+    if type(app_time) != type(competition_time):
+        app_time = datetime.strptime(app_time, format_string)
     new_places = num_places*place_value
     if int(club["points"]) < new_places:
         flash("Your club doesn't have enough points to book this number of places")
@@ -113,7 +117,7 @@ def can_purchase(club, competition, num_places, place_value):
     elif (int(competition['numberOfPlaces']) - num_places) < 0:
         flash("There is not enough places left to book this number of places")
         return False
-    elif CURRENT_TIME > competition_time:
+    elif app_time > competition_time:
         flash("This competition is already over, you can't book it")
         return False
     else:
@@ -128,13 +132,13 @@ def can_purchase(club, competition, num_places, place_value):
 def purchasePlaces():
     competition = [c for c in competitions if c['name'] == request.form['competition']][0]
     club = [c for c in clubs if c['name'] == request.form['club']][0]
+    if request.form['optionnal_time']:
+        CURRENT_TIME = request.form['optionnal_time']
     placesRequired = int(request.form['places'])
-    print("!!!!!!!!PURCHASE PLACE EST BIEN APPELLE!!!!!!!!!!!!")
     if placesRequired > 12:
         flash("you can't book more than twelve places at once !")
         return render_template('welcome.html', club=club, competitions=competitions)
-    if can_purchase(club, competition, placesRequired, PLACE_VALUE):
-        print("!!!!!!!!!CANPURCHASE EST BIEN APPELLEE!!!!!!!!!!!!!!")
+    if can_purchase(club, competition, placesRequired, PLACE_VALUE, CURRENT_TIME):
         load_and_rewrite_Clubs(club['name'], placesRequired, PLACE_VALUE)
         load_and_rewrite_Competitions(competition['name'], placesRequired)
         flash('Great-booking complete!')
