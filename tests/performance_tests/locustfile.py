@@ -1,7 +1,7 @@
-# import sys  
-# from pathlib import Path  
-# file = Path(__file__).resolve()  
-# package_root_directory = file.parents[2]  
+# import sys
+# from pathlib import Path
+# file = Path(__file__).resolve()
+# package_root_directory = file.parents[2]
 # sys.path.append(str(package_root_directory))
 # import sys
 # print(sys.path)
@@ -61,6 +61,7 @@ class ProjectPerfTest(HttpUser):
     # @task
     # def logout(self):
     #     self.client.post('/logout')
+    #
 
     
 
