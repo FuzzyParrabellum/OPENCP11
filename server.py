@@ -35,7 +35,7 @@ def load_and_rewrite_Competitions(comp_name, num_places):
     # Elle prend également en paramètres l'index de la competition à réecrire et le
     # nombre de places à booker
     # Ensuite elle enlève le nombre de places correspondantes
-    with open("{}".format(COMP_FILE), "r") as jsonFile:
+    with open(COMP_FILE, "r") as jsonFile:
         data = json.load(jsonFile)
 
     comp_index = find_list_of_dict_index(competitions, comp_name)
@@ -43,7 +43,7 @@ def load_and_rewrite_Competitions(comp_name, num_places):
 
     data['competitions'][comp_index]["numberOfPlaces"] = str(current_places - num_places)
 
-    with open("{}".format(COMP_FILE), "w") as jsonFile:
+    with open(COMP_FILE, "w") as jsonFile:
         json.dump(data, jsonFile, indent=4)
 
 def load_and_rewrite_Clubs(club_name, points_to_deduct, place_value):
@@ -55,7 +55,7 @@ def load_and_rewrite_Clubs(club_name, points_to_deduct, place_value):
     # 2) on sélectionne l'endroit où il y a les points du club
     # 3) on déduit le bon nombre de points du club
     points_to_deduct = points_to_deduct * place_value
-    with open("{}".format(CLUB_FILE), "r") as jsonFile:
+    with open(CLUB_FILE, "r") as jsonFile:
         data = json.load(jsonFile)
 
     club_index = find_list_of_dict_index(clubs, club_name)
@@ -63,7 +63,7 @@ def load_and_rewrite_Clubs(club_name, points_to_deduct, place_value):
 
     data['clubs'][club_index]["points"] = str(current_points - points_to_deduct)
 
-    with open("{}".format(CLUB_FILE), "w") as jsonFile:
+    with open(CLUB_FILE, "w") as jsonFile:
         json.dump(data, jsonFile, indent=4)
 
 
@@ -105,6 +105,8 @@ def book(competition,club):
 
 
 def can_purchase(club, competition, num_places, place_value, app_time=CURRENT_TIME):
+    # helper function pour la route suivante, /purchasePLaces, permet de déterminer
+    # si un club peut acheter un nombre de places donné à une compétition donnée
 
     format_string = "%Y-%m-%d %H:%M:%S"
     competition_time = datetime.strptime(competition["date"], format_string)
@@ -122,18 +124,22 @@ def can_purchase(club, competition, num_places, place_value, app_time=CURRENT_TI
         return False
     else:
         return True
-    # Cette fonction pourrait aider la logique de la view purchase en tant que helper
-    # Elle vérifie à partir de 2 paramètres, clubs et competitions, 
-    # si un club a bien le bon nombre de points
-    # pour purchase le nombre de places qu'il veut, si il reste toujours des places
-    # dans la compétition, si le club peut prendre le bon nombre de places
 
 @app.route('/purchasePlaces',methods=['POST'])
 def purchasePlaces():
     competition = [c for c in competitions if c['name'] == request.form['competition']][0]
     club = [c for c in clubs if c['name'] == request.form['club']][0]
-    if request.form['optionnal_time']:
+    global CURRENT_TIME
+    global COMP_FILE
+    global CLUB_FILE
+    # mettre ce global est nécessaire pour pouvoir mettre la condition ci_dessous, sinon
+    # bug
+    if request.form['optionnal_time'] != "FALSE":
         CURRENT_TIME = request.form['optionnal_time']
+    if request.form['test_state'] != "FALSE":
+        db_copies = (request.form['test_state']).split()
+        CLUB_FILE = db_copies[0]
+        COMP_FILE = db_copies[1]
     placesRequired = int(request.form['places'])
     if placesRequired > 12:
         flash("you can't book more than twelve places at once !")
