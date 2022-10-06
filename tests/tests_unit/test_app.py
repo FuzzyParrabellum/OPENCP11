@@ -1,15 +1,23 @@
-import pytest, json
+"""Unitary_test module for the project"""
+
+# import pdb
+import re
+import json
+from datetime import datetime
+
+import pytest
 from Python_Testing.server import loadClubs, loadCompetitions, \
     CLUB_FILE, COMP_FILE,can_purchase
-from flask import url_for, request, Flask
-from datetime import datetime
-import pdb
-import re
+from ..conftest import app_fixture as app
+# from flask import url_for, request, Flask
+
+
 
 
 # Fixture des Clubs et des Compétitions
 @pytest.fixture
-def Clubs_Fixture():
+def clubs_fixture():
+    """Fixture for the clubs.json file used as a batabase for the project"""
     data = [{"name":"Simply Lift","email":"john@simplylift.co",
         "points":"13"},
         {"name":"Iron Temple","email": "admin@irontemple.com",
@@ -19,21 +27,26 @@ def Clubs_Fixture():
     return data
 
 @pytest.fixture
-def Competitions_Fixture():
+def competitions_fixture():
+    """Fixture for the competitions.json file used as a batabase for the project"""
     data = [{"name": "Spring Festival","date": "2020-03-27 10:00:00",
             "numberOfPlaces": "25"},
             {"name": "Fall Classic","date": "2020-10-22 13:30:00",
             "numberOfPlaces": "13"}]
     return data
-    
+  
 # Test des fonctions LoadClubs et LoadCompetions pour voir si on a bien la bonne data
-def test_loadClubs(Clubs_Fixture):
+def test_load_clubs(clubs_fixture):
+    """Test vérifiant que la fonction loadCLubs utilisée dans server.py renvoie bien les données
+    du fichier clubs.json"""
     list_of_clubs = loadClubs()
-    assert list_of_clubs == Clubs_Fixture
+    assert list_of_clubs == clubs_fixture
 
-def test_loadCompetitions(Competitions_Fixture):
+def test_load_competitions(competitions_fixture):
+    """Test vérifiant que la fonction loadCompetitions utilisée dans server.py renvoie
+    bien les données du fichier clubs.json"""
     list_of_competitions = loadCompetitions()
-    assert list_of_competitions == Competitions_Fixture
+    assert list_of_competitions == competitions_fixture
 
 # Tests de l'index, organiser ça en Classe ?
 # Avec une Classe par route ?
@@ -41,129 +54,125 @@ def test_loadCompetitions(Competitions_Fixture):
 
 class TestIndex():
 
+    """Classe effectuant tous les tests de la route '/'"""
+
     # Test pour montrer que la route est accessible
     def test_should_status_code_ok(self, client):
+        """Test pour savoir si l'utilisateur peut bien se connecter à l'index du site"""
+
         response = client.get('/')
         assert response.status_code == 200
 
 
 class TestSummary():
+
+    """Classe effectuant tous les tests de la route '/showSummary'"""
     
     def test_should_accept_right_emails(self, client):
-        # Ici on pourrait utiliser parametrize ET la 1ere fixture pour récupérer tous
-        # les emails et les essayer un à un pour voir si ça marche, que le status_code
-        # est bon et qu'on est bien redirigé vers la bonne page html
+        """Test pour vérifier qu'un utilisateur peut se connecter au site en 
+        indiquant un email valide"""
 
         response = client.post('/showSummary', data={'email':'john@simplylift.co'})
         assert response.status_code == 200
 
-    # DECOMMENTER A LA FIN
     def test_should_redirect_wrong_email(self, client):
-        # il faut indiquer ce qui se passe quand on entre un mauvais email, pour l'instant
-        # fait planter l'appli, il faudrait plutôt que ça renvoie un msg d'erreur et qu'on
-        # revienne sur l'index je pense
+        """Test pour vérifier qu'un utilisateur ne peut pas se connecter au site en 
+        indiquant un email invalide"""
         response = client.post('/showSummary', data={'email':'test@wrong-email.co'})
         assert response.headers["Location"] == "/"
 
 class TestBookCompetition():
 
-    # Pouurait peut-etre mettre une methode setup et teardown pour ne pas avoir
-    # a réécrire le code des good_club et bad_club 
-    
-    def test_should_error_if_club_or_comp_not_found(self, client, Competitions_Fixture, 
-                                                    Clubs_Fixture):
-        good_comp_name = Competitions_Fixture[0]['name']
+    """Classe effectuant tous les tests de la route '/book/<competition>/<club>'"""
+
+
+    def test_should_error_if_club_or_comp_not_found(self, client, competitions_fixture,
+                                                    clubs_fixture):
+        """Test vérifiant que le site renvoie bien une erreur quand on tente de renseigner
+        un mauvais nom de club ou de competition"""
+
+        good_comp_name = competitions_fixture[0]['name']
         bad_comp = {"name":"test_name", "date":"2020-03-27 10:00:00", 
                     "numberOfPlaces":"24"}
         bad_comp_name = bad_comp['name']
-        good_club_name = Clubs_Fixture[0]['name']
+        good_club_name = clubs_fixture[0]['name']
         bad_club = {"name":"test_name", "email":"test@example.com", "points":"25"}
         bad_club_name = bad_club['name']
         response1 = client.get(f'/book/{bad_comp_name}/{good_club_name}')
         response2 = client.get(f'/book/{good_comp_name}/{bad_club_name}')
         # mettre egalement un assert de redirection
-        # apparement peut mettre 
+        # apparement peut mettre
         assert response1.status_code == 500
         assert response2.status_code == 500
 
-    def test_should_connect_to_right_html(self, client, Competitions_Fixture, 
-                                                    Clubs_Fixture):
-        # ici peut-être à la fois mettre le test de la bonne html mais aussi du bon
-        # status_code
-        good_comp_name = Competitions_Fixture[0]['name']
-        good_club_name = Clubs_Fixture[0]['name']
+    def test_should_connect_to_right_html(self, client, competitions_fixture,
+                                                    clubs_fixture):
+        """Test vérifiant qu'on peut bien se connecter au site en indiquant un bon nom de
+        competition et un bon nom de club"""
+
+        good_comp_name = competitions_fixture[0]['name']
+        good_club_name = clubs_fixture[0]['name']
         response = client.get(f'/book/{good_comp_name}/{good_club_name}')
         assert response.status_code == 200
 
 
 class TestPurchase():
 
+    """Classe effectuant tous les tests de la route '/purchasePlaces'"""
+
     def setup_method(self, method):
-        # Création de deux fichiers json temporaires ou non où on va écrire 
-        # sur le fichier nos deux fixtures competitions et clubs
+        """setup_method permettant d'enregistrer les 4 variables self.clubs, self.competitions,
+        self.test_time et self.current_time pour les tests suivants"""
+        with open(CLUB_FILE, "r") as json_file:
+            self.clubs = json.load(json_file)
 
-
-        # Autre option, on ouvre ici le contenu du fichier json de base et on en
-        # copie le contenu
-        # pour ensuite le réécrire dans la méthode teardown
-        with open("{}".format(CLUB_FILE), "r") as jsonFile:
-            clubs_data = json.load(jsonFile)
-        self.clubs = clubs_data
-
-        with open("{}".format(COMP_FILE), "r") as jsonFile:
-            competitions_data = json.load(jsonFile)
-        self.competitions = competitions_data
+        with open(COMP_FILE, "r") as json_file:
+            self.competitions = json.load(json_file)
 
         format_string = "%Y-%m-%d %H:%M:%S"
         test_time = "2015-03-27 10:00:00"
         self.test_time = datetime.strptime(test_time, format_string)
         self.current_time = datetime.now().strftime(format_string)
 
-    # def test_should_buy_places(self, client):
-    #     # Il faut ici vérifier que si on envoie un club, un festival et un nb de places,
-    #     # en fonction du nombre de places dans le fichier json competitions
-    #     # et du nombre de points du club (prévoir un multiplieur de nb de points 
-    #     # nécessaire) dans le fichier json clubs, il y a 
-    #     # 1 une bonne redirection
-    #     # 2 un nombre de points déduit du club
-    #     # 3 un nombre de place déduit de la competition
 
-    def test_enough_points_to_book(self, client, Competitions_Fixture, 
-                                        Clubs_Fixture):
-        
-        test_comp = Competitions_Fixture[0]["name"]
-        test_club = Clubs_Fixture[0]["name"]
+    def test_enough_points_to_book(self, client, competitions_fixture,
+                                        clubs_fixture):
+        """Test vérifiant que le secrétaire d'un club puisse achter une place dans une compétition
+        et que le nombre de points est bien déduit du portefeuille du club"""
+      
+        test_comp = competitions_fixture[0]["name"]
+        test_club = clubs_fixture[0]["name"]
         places_to_buy = 1
         ticket_value = 1
-        
+
         response = client.post('/purchasePlaces', data={'competition': test_comp,
                                                         'club': test_club,
                                                         'places':places_to_buy,
                                                         'optionnal_time':self.test_time})
         assert response.status_code == 200
-        
+
         # on vérifie que les points on bien été déduits
         points_regex = re.compile(r'(Points available: )(\d+)')
         response_html = response.data.decode()
         mo = points_regex.search(response_html)
         original_club_points = int(self.clubs["clubs"][0]["points"])
-       
+
         assert original_club_points - (places_to_buy*ticket_value) == int(mo.group(2))
         # on vérifie 1 qu'il reste des places 2 qu'il reste assez de places pour
         # le nombre de places que le club veut acheter 3 que le club a assez de points
         # pour acheter ce nombre de places
 
-    def test_enough_places_left_to_book(self, client, Competitions_Fixture, 
-                                        Clubs_Fixture):
+    def test_enough_places_left_to_book(self, client, competitions_fixture, 
+                                        clubs_fixture):
 
-        test_comp = Competitions_Fixture[0]["name"]
-        test_club = Clubs_Fixture[0]["name"]
+        test_comp = competitions_fixture[0]["name"]
+        test_club = clubs_fixture[0]["name"]
         places_to_buy = 500
         ticket_value = 1
         
         # ICI UTILISER LE MOCK DES CONSTANTES CLUB_FILE ET COMP_FILE
         # AFIN QUE LA DATABASE MODIFIEE SOIT BIEN NOS FICHIERS JSON TEMPORAIRES
-        # CREES AVEC NOS FIXTURES Competitions_Fixture, Clubs_Fixture
+        # CREES AVEC NOS FIXTURES competitions_fixture, clubs_fixture
                                         
         response = client.post('/purchasePlaces', data={'competition': test_comp,
                                                         'club': test_club,
@@ -177,11 +186,11 @@ class TestPurchase():
 
         assert club_points == self.clubs["clubs"][0]["points"]
 
-    def test_competition_isnt_expired(self, client, Competitions_Fixture, 
-                                        Clubs_Fixture, app):
+    def test_competition_isnt_expired(self, client, competitions_fixture, 
+                                        clubs_fixture, app):
 
-        test_comp = Competitions_Fixture[0]
-        test_club = Clubs_Fixture[0]
+        test_comp = competitions_fixture[0]
+        test_club = clubs_fixture[0]
         places_to_buy = 1
         ticket_value = 1
 
@@ -210,10 +219,10 @@ class TestPurchase():
         assert "This competition is already over" in html_content
 
 
-    def test_competitions_places_can_get_deducted(self, client, Competitions_Fixture, 
-                                    Clubs_Fixture):
-        test_comp = Competitions_Fixture[0]["name"]
-        test_club = Clubs_Fixture[0]["name"]
+    def test_competitions_places_can_get_deducted(self, client, competitions_fixture, 
+                                    clubs_fixture):
+        test_comp = competitions_fixture[0]["name"]
+        test_club = clubs_fixture[0]["name"]
         places_to_buy = 1
         response = client.post('/purchasePlaces', data={'competition': test_comp,
                                                         'club': test_club,
@@ -229,10 +238,10 @@ class TestPurchase():
         original_comp_places = int(self.competitions["competitions"][0]["numberOfPlaces"])
         assert original_comp_places - places_to_buy == int(mo.group(2))
 
-    def test_cant_book_more_than_twelve_places(self, client, Competitions_Fixture, 
-                                    Clubs_Fixture):
-        test_comp = Competitions_Fixture[0]["name"]
-        test_club = Clubs_Fixture[0]["name"]
+    def test_cant_book_more_than_twelve_places(self, client, competitions_fixture, 
+                                    clubs_fixture):
+        test_comp = competitions_fixture[0]["name"]
+        test_club = clubs_fixture[0]["name"]
         places_to_buy = 13
         
         # Verify in front-end that user can't select more than 12 places
