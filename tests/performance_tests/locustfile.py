@@ -7,7 +7,7 @@
 # print(sys.path)
 from locust import HttpUser, task, constant, constant_throughput
 import json
-# from server import CLUB_FILE, COMP_FILE
+from server import CLUB_FILE, COMP_FILE
 from datetime import datetime
 import shutil
 import os
@@ -15,20 +15,11 @@ import os
 class ProjectPerfTest(HttpUser):
 
     def on_start(self):
-        # with open("{}".format(CLUB_FILE), "r") as jsonFile:
-        #     clubs_data = json.load(jsonFile)
-        # self.clubs = clubs_data
-
-        # with open("{}".format(COMP_FILE), "r") as jsonFile:
-        #     competitions_data = json.load(jsonFile)
-        # self.competitions = competitions_data
-        shutil.copy("clubs.json", "clubs_copy.json")
-        shutil.copy("competitions.json", "competitions_copy.json")
-
-        with open("{}".format("clubs_copy.json"), "r") as jsonFile:
+        
+        with open("{}".format(CLUB_FILE), "r") as jsonFile:
             self.clubs = json.load(jsonFile)
 
-        with open("{}".format("competitions_copy.json"), "r") as jsonFile:
+        with open("{}".format(COMP_FILE), "r") as jsonFile:
             self.competitions = json.load(jsonFile)
 
         format_string = "%Y-%m-%d %H:%M:%S"
@@ -54,16 +45,13 @@ class ProjectPerfTest(HttpUser):
     @task
     def purchasePlaces(self):
         
-        wait_time = constant(10)
         test_club = self.clubs['clubs'][0]['name']
         test_comp = self.competitions['competitions'][0]['name']
         places_to_buy = 1
-        db_json_copies = "clubs_copy.json competitions_copy.json"
         response = self.client.post('/purchasePlaces', data={'competition': test_comp,
                                                         'club': test_club,
                                                         'places':places_to_buy,
-                                                        'optionnal_time':self.test_time,
-                                                        'test_state':db_json_copies})
+                                                        'optionnal_time':self.test_time})
 
     @task
     def displayClubs(self):
@@ -71,10 +59,10 @@ class ProjectPerfTest(HttpUser):
 
     
 
-    # @task
-    # def logout(self):
-    #     self.client.post('/logout')
-    #
+    @task
+    def logout(self):
+        self.client.get('/logout')
+    
 
     
 

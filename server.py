@@ -2,70 +2,38 @@ import json, pdb
 from flask import Flask,render_template,request,redirect,flash,url_for
 from datetime import datetime
 
-CLUB_FILE = 'clubs.json'
-COMP_FILE = 'competitions.json'
+
 # If you want to set the current_time to now
 CURRENT_TIME = datetime.now()
-# If you want to set the current_time to before the competitions in the json file
+# If you want to set the current_time to before the competitions in the json file,
+# you need to set it before "2020-03-27 10:00:00"
+# format_string = "%Y-%m-%d %H:%M:%S"
+# test_time = "2015-03-27 10:00:00"
+# CURRENT_TIME = datetime.strptime(test_time, format_string)
+
+CLUB_FILE = "clubs.json"
+COMP_FILE = "competitions.json"
 
 def loadClubs():
-    with open('clubs.json') as c:
+    with open(CLUB_FILE) as c:
          listOfClubs = json.load(c)['clubs']
          return listOfClubs
 
 
 def loadCompetitions():
-    with open('competitions.json') as comps:
+    with open(COMP_FILE) as comps:
          listOfCompetitions = json.load(comps)['competitions']
          return listOfCompetitions
 
 competitions = loadCompetitions()
 clubs = loadClubs()
 
-def find_list_of_dict_index(list_of_dict, name):
-    index = 0
-    for dict in list_of_dict:
-        if name in dict.values():
-            return index
-        index += 1
-
-def load_and_rewrite_Competitions(comp_name, num_places):
-    # Cette fonction prend en paramètre le lien vers le fichier json à utiliser pr
-    # le test
-    # Elle prend également en paramètres l'index de la competition à réecrire et le
-    # nombre de places à booker
-    # Ensuite elle enlève le nombre de places correspondantes
-    with open(COMP_FILE, "r") as jsonFile:
-        data = json.load(jsonFile)
-
-    comp_index = find_list_of_dict_index(competitions, comp_name)
-    current_places = int(data['competitions'][comp_index]["numberOfPlaces"])
-
-    data['competitions'][comp_index]["numberOfPlaces"] = str(current_places - num_places)
-
-    with open(COMP_FILE, "w") as jsonFile:
-        json.dump(data, jsonFile, indent=4)
-
-def load_and_rewrite_Clubs(club_name, points_to_deduct, place_value):
-    # Cette fonction prend en paramètre le lien vers le fichier json à utiliser pr le
-    # test
-    # Elle prend également en paramètre l'index du club à réecrire et le nombre de 
-    # places que le club aimerait booker
-    # 1) On ouvre le fichier json en mode write
-    # 2) on sélectionne l'endroit où il y a les points du club
-    # 3) on déduit le bon nombre de points du club
-    points_to_deduct = points_to_deduct * place_value
-    with open(CLUB_FILE, "r") as jsonFile:
-        data = json.load(jsonFile)
-
-    club_index = find_list_of_dict_index(clubs, club_name)
-    current_points = int(data['clubs'][club_index]["points"])
-
-    data['clubs'][club_index]["points"] = str(current_points - points_to_deduct)
-
-    with open(CLUB_FILE, "w") as jsonFile:
-        json.dump(data, jsonFile, indent=4)
-
+# def find_list_of_dict_index(list_of_dict, name):
+#     index = 0
+#     for dict in list_of_dict:
+#         if name in dict.values():
+#             return index
+#         index += 1
 
 PLACE_VALUE = 1
 
@@ -87,10 +55,6 @@ def showSummary():
             return render_template('welcome.html',club=club,competitions=competitions)
     flash("There wasn't any club with this email in our database")
     return redirect(url_for('index'))
-# @app.route('/showSummary',methods=['POST'])
-# def showSummary():
-#     club = [club for club in clubs if club['email'] == request.form['email']][0]
-#     return render_template('welcome.html',club=club,competitions=competitions))
 
 
 @app.route('/book/<competition>/<club>')
@@ -130,25 +94,22 @@ def purchasePlaces():
     competition = [c for c in competitions if c['name'] == request.form['competition']][0]
     club = [c for c in clubs if c['name'] == request.form['club']][0]
     global CURRENT_TIME
-    global COMP_FILE
-    global CLUB_FILE
     # mettre ce global est nécessaire pour pouvoir mettre la condition ci_dessous, sinon
     # bug
     if request.form['optionnal_time'] != "FALSE":
         CURRENT_TIME = request.form['optionnal_time']
-    if request.form['test_state'] != "FALSE":
-        db_copies = (request.form['test_state']).split()
-        CLUB_FILE = db_copies[0]
-        COMP_FILE = db_copies[1]
     placesRequired = int(request.form['places'])
     if placesRequired > 12:
         flash("you can't book more than twelve places at once !")
         return render_template('welcome.html', club=club, competitions=competitions)
     if can_purchase(club, competition, placesRequired, PLACE_VALUE, CURRENT_TIME):
-        load_and_rewrite_Clubs(club['name'], placesRequired, PLACE_VALUE)
-        load_and_rewrite_Competitions(competition['name'], placesRequired)
+        club["points"] = str(int(club["points"]) - placesRequired*PLACE_VALUE)
+        competition_to_deduct = competitions[competitions.index(competition)]
+        competition_to_deduct["numberOfPlaces"] = \
+            str(int(competition_to_deduct["numberOfPlaces"]) - placesRequired)
         flash('Great-booking complete!')
     # competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-placesRequired
+    # pdb.set_trace()
     return render_template('welcome.html', club=club, competitions=competitions)
 
 

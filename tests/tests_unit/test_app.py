@@ -1,11 +1,10 @@
-from ..conftest import client
-from ..conftest import app_fixture as app
 import pytest, json
 from Python_Testing.server import loadClubs, loadCompetitions, \
     CLUB_FILE, COMP_FILE,can_purchase
 from flask import url_for, request, Flask
 from datetime import datetime
 import pdb
+import re
 
 
 # Fixture des Clubs et des Compétitions
@@ -137,23 +136,19 @@ class TestPurchase():
         places_to_buy = 1
         ticket_value = 1
         
-        # ICI UTILISER LE MOCK DES CONSTANTES CLUB_FILE ET COMP_FILE
-        # AFIN QUE LA DATABASE MODIFIEE SOIT BIEN NOS FICHIERS JSON TEMPORAIRES
-        # CREES AVEC NOS FIXTURES Competitions_Fixture, Clubs_Fixture
-                  
         response = client.post('/purchasePlaces', data={'competition': test_comp,
                                                         'club': test_club,
                                                         'places':places_to_buy,
                                                         'optionnal_time':self.test_time})
         assert response.status_code == 200
-        # on vérifie que les points on bien été déduits du fichier clubs.json
-        with open("{}".format(CLUB_FILE), "r") as jsonFile:
-            jFile = json.load(jsonFile)
-            club_points = jFile["clubs"][0]["points"]
-
+        
+        # on vérifie que les points on bien été déduits
+        points_regex = re.compile(r'(Points available: )(\d+)')
+        response_html = response.data.decode()
+        mo = points_regex.search(response_html)
         original_club_points = int(self.clubs["clubs"][0]["points"])
-        print(response.data.decode())
-        assert original_club_points - (places_to_buy*ticket_value) == int(club_points)
+       
+        assert original_club_points - (places_to_buy*ticket_value) == int(mo.group(2))
         # on vérifie 1 qu'il reste des places 2 qu'il reste assez de places pour
         # le nombre de places que le club veut acheter 3 que le club a assez de points
         # pour acheter ce nombre de places
@@ -211,35 +206,28 @@ class TestPurchase():
                                                         'optionnal_time':self.current_time})
 
         html_content = response.data.decode() 
-        # mettre en dessous un assert en important la fonction canpurchase avec les
-        # bon arguments et vérifier qu'elle renvoie bien false avec ceux qu'on envoie
-        # puis mettre un assert pour vérifier qu'il y a le bon message d'erreur flash
-        # dans la réponse
+        
         assert "This competition is already over" in html_content
 
-        # Important, avant ou après montrer qu'on peut bien purchase un ticket pour
-        # une compétition qui a lieu plus tard genre datetime.now() + 1 day, pour
-        # se faire doit créer une fausse compétition
 
     def test_competitions_places_can_get_deducted(self, client, Competitions_Fixture, 
                                     Clubs_Fixture):
         test_comp = Competitions_Fixture[0]["name"]
         test_club = Clubs_Fixture[0]["name"]
         places_to_buy = 1
-                      
         response = client.post('/purchasePlaces', data={'competition': test_comp,
                                                         'club': test_club,
                                                         'places':places_to_buy,
                                                         'optionnal_time':self.test_time})
         assert response.status_code == 200
         # on vérifie que les points on bien été déduits du fichier clubs.json
-        with open("{}".format(COMP_FILE), "r") as jsonFile:
-            jFile = json.load(jsonFile)
-            competition_places = jFile["competitions"][0]["numberOfPlaces"]
-
+        # on vérifie que les points on bien été déduits du fichier
+        places_regex = \
+            re.compile(f'({test_comp}.*?Places: )(\\d+)', re.DOTALL)
+        response_html = response.data.decode()
+        mo = places_regex.search(response_html)
         original_comp_places = int(self.competitions["competitions"][0]["numberOfPlaces"])
-        
-        assert original_comp_places - places_to_buy == int(competition_places)
+        assert original_comp_places - places_to_buy == int(mo.group(2))
 
     def test_cant_book_more_than_twelve_places(self, client, Competitions_Fixture, 
                                     Clubs_Fixture):
