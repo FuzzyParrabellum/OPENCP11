@@ -9,9 +9,10 @@ import importlib
 from flask import session, current_app
 import pytest
 from Python_Testing.server import loadClubs, loadCompetitions, get_clubs,\
-    CLUB_FILE, COMP_FILE,can_purchase
-from ..conftest import app_fixture as app
-from ..conftest import client
+    CLUB_FILE, COMP_FILE, can_purchase
+    # a arranger pour le app_context
+# from ..conftest import app_fixture as app
+# from ..conftest import client
 # from flask import url_for, request, Flask
 
 
@@ -141,6 +142,7 @@ class TestPurchase():
         self.current_time = datetime.now().strftime(format_string)
 
 
+
     def test_enough_points_to_book(self, client, competitions_fixture,
                                         clubs_fixture):
         """Test vérifiant que le secrétaire d'un club puisse acheter une place dans une compétition
@@ -150,6 +152,7 @@ class TestPurchase():
         test_club = clubs_fixture[0]["name"]
         places_to_buy = 1
         ticket_value = 1
+        
 
         response = client.post('/purchasePlaces', data={'competition': test_comp,
                                                         'club': test_club,
@@ -165,8 +168,9 @@ class TestPurchase():
 
         assert original_club_points - (places_to_buy*ticket_value) == int(mo.group(2))
 
+       
     def test_enough_places_left_to_book(self, client, competitions_fixture,
-                                        clubs_fixture, app):
+                                        clubs_fixture):
         """Test vérifiant que le secrétaire d'un club ne puisse pas acheter plus de places
         qu'il y en a dans la compétition"""
         
@@ -181,7 +185,7 @@ class TestPurchase():
         #     print('hello')
         # pdb.set_trace()
         
-
+        # pdb.set_trace()
         # test_response = client.post('/showSummary', data={'email':'john@simplylift.co'})
 
 
