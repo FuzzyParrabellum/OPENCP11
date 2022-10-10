@@ -16,17 +16,20 @@ COMP_FILE = "competitions.json"
 
 def loadClubs():
     with open(CLUB_FILE) as c:
-         listOfClubs = json.load(c)['clubs']
-         return listOfClubs
+        listOfClubs = json.load(c)['clubs']
+        return listOfClubs
 
 
 def loadCompetitions():
     with open(COMP_FILE) as comps:
-         listOfCompetitions = json.load(comps)['competitions']
-         return listOfCompetitions
+        listOfCompetitions = json.load(comps)['competitions']
+        return listOfCompetitions
 
 competitions = loadCompetitions()
 clubs = loadClubs()
+
+def get_clubs():
+    print(clubs)
 
 # def find_list_of_dict_index(list_of_dict, name):
 #     index = 0
@@ -45,6 +48,7 @@ app.secret_key = 'something_special'
 
 @app.route('/')
 def index():
+    pdb.set_trace()
     return render_template('index.html')
 
 
@@ -56,16 +60,27 @@ def showSummary():
     flash("There wasn't any club with this email in our database")
     return redirect(url_for('index'))
 
+class ParametersError(Exception):
+  code = 400
+  description = "You didn't put an existing club in the parameters of you request!"
 
 @app.route('/book/<competition>/<club>')
 def book(competition,club):
-    foundClub = [c for c in clubs if c['name'] == club][0]
-    foundCompetition = [c for c in competitions if c['name'] == competition][0]
-    if foundClub and foundCompetition:
+    try:
+        foundClub = [c for c in clubs if c['name'] == club][0]
+        foundCompetition = [c for c in competitions if c['name'] == competition][0]
         return render_template('booking.html',club=foundClub,competition=foundCompetition)
-    else:
-        flash("Something went wrong-please try again")
-        return render_template('welcome.html', club=club, competitions=competitions)
+    # if foundClub and foundCompetition:
+    except:
+        return f"""You didn't put an existing club or competition in the 
+        parameters of you request! Your parameters were {competition}/{club}""", 400
+        # raise ParametersError(f"""You didn't put an existing club or competition in the 
+        # parameters of you request! Your parameters were {competition}/{club}""")
+    # elif foundClub:
+    #     flash("Something went wrong-please try again")
+    #     return render_template('welcome.html', club=club, competitions=competitions)
+    # else:
+        
 
 
 def can_purchase(club, competition, num_places, place_value, app_time=CURRENT_TIME):
@@ -101,15 +116,16 @@ def purchasePlaces():
     placesRequired = int(request.form['places'])
     if placesRequired > 12:
         flash("you can't book more than twelve places at once !")
+        print("YES")
         return render_template('welcome.html', club=club, competitions=competitions)
     if can_purchase(club, competition, placesRequired, PLACE_VALUE, CURRENT_TIME):
+        print("NO")
         club["points"] = str(int(club["points"]) - placesRequired*PLACE_VALUE)
         competition_to_deduct = competitions[competitions.index(competition)]
         competition_to_deduct["numberOfPlaces"] = \
             str(int(competition_to_deduct["numberOfPlaces"]) - placesRequired)
         flash('Great-booking complete!')
     # competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-placesRequired
-    # pdb.set_trace()
     return render_template('welcome.html', club=club, competitions=competitions)
 
 
