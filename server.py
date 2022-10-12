@@ -1,5 +1,20 @@
 import json
+from datetime import datetime
+
 from flask import Flask,render_template,request,redirect,flash,url_for
+
+
+
+# If you want to set the current_time to now
+CURRENT_TIME = datetime.now()
+# If you want to set the current_time to before the competitions in the json file,
+# you need to set it before "2020-03-27 10:00:00"
+# format_string = "%Y-%m-%d %H:%M:%S"
+# test_time = "2015-03-27 10:00:00"
+# CURRENT_TIME = datetime.strptime(test_time, format_string)
+
+CLUB_FILE = "clubs.json"
+COMP_FILE = "competitions.json"
 
 
 def loadClubs():
@@ -13,6 +28,21 @@ def loadCompetitions():
          listOfCompetitions = json.load(comps)['competitions']
          return listOfCompetitions
 
+def can_purchase(club, competition, num_places, place_value, app_time=CURRENT_TIME):
+    # helper function pour la route suivante, /purchasePLaces, permet de déterminer
+    # si un club peut acheter un nombre de places donné à une compétition donnée
+
+    format_string = "%Y-%m-%d %H:%M:%S"
+    competition_time = datetime.strptime(competition["date"], format_string)
+    if type(app_time) != type(competition_time):
+        app_time = datetime.strptime(app_time, format_string)
+    elif app_time > competition_time:
+        flash("This competition is already over, you can't book it")
+        return False
+    else:
+        return True
+
+PLACE_VALUE = 1
 
 app = Flask(__name__)
 app.secret_key = 'something_special'
@@ -45,9 +75,15 @@ def book(competition,club):
 def purchasePlaces():
     competition = [c for c in competitions if c['name'] == request.form['competition']][0]
     club = [c for c in clubs if c['name'] == request.form['club']][0]
+    global CURRENT_TIME
+        # mettre ce global est nécessaire pour pouvoir mettre la condition ci_dessous, 
+        # sinon bug
+    if request.form['optionnal_time'] != "FALSE":
+        CURRENT_TIME = request.form['optionnal_time']
     placesRequired = int(request.form['places'])
-    competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-placesRequired
-    flash('Great-booking complete!')
+    if can_purchase(club, competition, placesRequired, PLACE_VALUE, CURRENT_TIME):
+        competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-placesRequired
+        flash('Great-booking complete!')
     return render_template('welcome.html', club=club, competitions=competitions)
 
 
