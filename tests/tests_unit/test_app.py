@@ -51,9 +51,6 @@ def test_load_competitions(competitions_fixture):
     list_of_competitions = loadCompetitions()
     assert list_of_competitions == competitions_fixture
 
-# Tests de l'index, organiser ça en Classe ?
-# Avec une Classe par route ?
-
 
 class TestIndex():
 
@@ -147,7 +144,7 @@ class TestPurchase():
         test_comp = competitions_fixture[0]["name"]
         test_club = clubs_fixture[0]["name"]
         places_to_buy = 1
-        ticket_value = 1
+        ticket_value = 3
 
 
         response = client.post('/purchasePlaces', data={'competition': test_comp,
@@ -173,7 +170,6 @@ class TestPurchase():
         test_comp = competitions_fixture[0]["name"]
         test_club = clubs_fixture[0]["name"]
         places_to_buy = 500
-        ticket_value = 1
 
         response = client.post('/purchasePlaces', data={'competition': test_comp,
                                                         'club': test_club,
@@ -198,7 +194,7 @@ class TestPurchase():
         test_comp = competitions_fixture[0]
         test_club = clubs_fixture[0]
         places_to_buy = 1
-        ticket_value = 1
+        ticket_value = 3
 
         later_date_comp = {
             "name": "Lalapalooza Festival",
@@ -233,6 +229,7 @@ class TestPurchase():
         test_comp = competitions_fixture[0]["name"]
         test_club = clubs_fixture[0]["name"]
         places_to_buy = 1
+
         response = client.post('/purchasePlaces', data={'competition': test_comp,
                                                         'club': test_club,
                                                         'places':places_to_buy,

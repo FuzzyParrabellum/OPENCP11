@@ -50,7 +50,7 @@ def can_purchase(club, competition, num_places, place_value, app_time=CURRENT_TI
         return True
 
 
-PLACE_VALUE = 1
+PLACE_VALUE = 3
 
 def create_app(config={}):
     app = Flask(__name__)
