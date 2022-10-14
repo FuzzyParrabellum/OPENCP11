@@ -1,6 +1,6 @@
 # gudlift-registration
 
-Test exercice app - How a powerlifting club can book a place for a powerlifting competition
+Openclassrooms exercice - testing app - How a powerlifting club can book a place for a powerlifting competition
 Made with Flask for back, locust and pytest for tests
 
 The clubs.json and competitions.json files are used as local database
