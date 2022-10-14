@@ -1,21 +1,15 @@
-# import sys
-# from pathlib import Path
-# file = Path(__file__).resolve()
-# package_root_directory = file.parents[2]
-# sys.path.append(str(package_root_directory))
-# import sys
-# print(sys.path)
-from locust import HttpUser, task, constant, constant_throughput
-import json
-from server import CLUB_FILE, COMP_FILE
 from datetime import datetime
-import shutil
-import os
+import json
+
+from locust import HttpUser, task
+
+from server import CLUB_FILE, COMP_FILE
+
 
 class ProjectPerfTest(HttpUser):
 
     def on_start(self):
-        
+
         with open("{}".format(CLUB_FILE), "r") as jsonFile:
             self.clubs = json.load(jsonFile)
 
@@ -44,7 +38,7 @@ class ProjectPerfTest(HttpUser):
 
     @task
     def purchasePlaces(self):
-        
+
         test_club = self.clubs['clubs'][0]['name']
         test_comp = self.competitions['competitions'][0]['name']
         places_to_buy = 1
@@ -57,35 +51,6 @@ class ProjectPerfTest(HttpUser):
     def displayClubs(self):
         self.client.get('/displayBoard', data={'clubs':self.clubs['clubs']})
 
-    
-
     @task
     def logout(self):
         self.client.get('/logout')
-    
-
-    
-
-
-    def on_stop(self):
-        # with open("{}".format(CLUB_FILE), "r") as jsonFile:
-        #     clubs_data = json.load(jsonFile)
-        
-        # clubs_data["clubs"] = self.clubs["clubs"]
-
-        # with open("{}".format(CLUB_FILE), "w") as jsonFile:
-        #     json.dump(clubs_data, jsonFile, indent=4)
-
-        # with open("{}".format(COMP_FILE), "r") as jsonFile:
-        #     competitions_data = json.load(jsonFile)
-        
-        # competitions_data["competitions"] = self.competitions["competitions"]
-
-        # with open("{}".format(COMP_FILE), "w") as jsonFile:
-        #     json.dump(competitions_data, jsonFile, indent=4)
-
-        if os.path.exists("clubs_copy.json"):
-            os.remove("clubs_copy.json")
-
-        if os.path.exists("competitions_copy.json"):
-            os.remove("competitions_copy.json")

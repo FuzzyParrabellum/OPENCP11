@@ -1,11 +1,12 @@
-import json, pdb
+import json
 from datetime import datetime
 
 from flask import Flask,render_template,request,redirect,flash,url_for
 
 
 
-# If you want to set the current_time to now
+# If you want to set the current_time to now, knowing that you can't book competitions
+# that are already over
 CURRENT_TIME = datetime.now()
 # If you want to set the current_time to before the competitions in the json file,
 # you need to set it before "2020-03-27 10:00:00"
@@ -29,8 +30,8 @@ def loadCompetitions():
 
 
 def can_purchase(club, competition, num_places, place_value, app_time=CURRENT_TIME):
-    # helper function pour la route suivante, /purchasePLaces, permet de déterminer
-    # si un club peut acheter un nombre de places donné à une compétition donnée
+    """helper function for the following route, /purchasePLaces. Determines if a
+    club's secretary can buy a certain amount of places in a certain competition """
 
     format_string = "%Y-%m-%d %H:%M:%S"
     competition_time = datetime.strptime(competition["date"], format_string)
@@ -88,8 +89,7 @@ def create_app(config={}):
         competition = [c for c in competitions if c['name'] == request.form['competition']][0]
         club = [c for c in clubs if c['name'] == request.form['club']][0]
         global CURRENT_TIME
-        # mettre ce global est nécessaire pour pouvoir mettre la condition ci_dessous, 
-        # sinon bug
+        # This global is necessary for the following condition, if not a bug will appear
         if request.form['optionnal_time'] != "FALSE":
             CURRENT_TIME = request.form['optionnal_time']
         placesRequired = int(request.form['places'])

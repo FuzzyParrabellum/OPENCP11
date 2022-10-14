@@ -1,6 +1,5 @@
 """Unitary_test module for the project"""
 
-import pdb
 import re
 import json
 from datetime import datetime
@@ -11,13 +10,9 @@ from Python_Testing.server import loadClubs, loadCompetitions, \
 from ..conftest import app_fixture as app
 
 
-
-
-
-# Fixture des Clubs et des Compétitions
 @pytest.fixture
 def clubs_fixture():
-    """Fixture for the clubs.json file used as a batabase for the project"""
+    """Fixture for the clubs.json file used as a database for the project"""
 
     data = [{"name":"Simply Lift","email":"john@simplylift.co",
         "points":"13"},
@@ -29,7 +24,7 @@ def clubs_fixture():
 
 @pytest.fixture
 def competitions_fixture():
-    """Fixture for the competitions.json file used as a batabase for the project"""
+    """Fixture for the competitions.json file used as a database for the project"""
 
     data = [{"name": "Spring Festival","date": "2020-03-27 10:00:00",
             "numberOfPlaces": "25"},
@@ -37,28 +32,27 @@ def competitions_fixture():
             "numberOfPlaces": "13"}]
     return data
 
-# Test des fonctions LoadClubs et LoadCompetions pour voir si on a bien la bonne data
 def test_load_clubs(clubs_fixture):
-    """Test vérifiant que la fonction loadCLubs utilisée dans server.py renvoie bien les données
-    du fichier clubs.json"""
+    """Checks if the loadClubs function from the server.py file returns the same
+    data as the clubs.json file used as local database for this project"""
 
     list_of_clubs = loadClubs()
     assert list_of_clubs == clubs_fixture
 
 def test_load_competitions(competitions_fixture):
-    """Test vérifiant que la fonction loadCompetitions utilisée dans server.py renvoie
-    bien les données du fichier clubs.json"""
+    """Checks if the loadCompetitions function from the server.py file returns the same
+    data as the competitions.json file used as local database for this project"""
+
     list_of_competitions = loadCompetitions()
     assert list_of_competitions == competitions_fixture
 
 
 class TestIndex():
 
-    """Classe effectuant tous les tests de la route '/'"""
+    """Class holding all the tests for the '/' route"""
 
-    # Test pour montrer que la route est accessible
     def test_should_status_code_ok(self, client):
-        """Test pour savoir si l'utilisateur peut bien se connecter à l'index du site"""
+        """Checks if user can connect to website login page"""
 
         response = client.get('/')
         assert response.status_code == 200
@@ -66,30 +60,28 @@ class TestIndex():
 
 class TestSummary():
 
-    """Classe effectuant tous les tests de la route '/showSummary'"""
+    """Class holding all the tests for the '/showSummary' route"""
 
     def test_should_accept_right_emails(self, client):
-        """Test pour vérifier qu'un utilisateur peut se connecter au site en 
-        indiquant un email valide"""
+        """Checks that user can connect to homepage with right email"""
 
         response = client.post('/showSummary', data={'email':'john@simplylift.co'})
         assert response.status_code == 200
 
     def test_should_redirect_wrong_email(self, client):
-        """Test pour vérifier qu'un utilisateur ne peut pas se connecter au site en 
-        indiquant un email invalide"""
+        """Checks that user can't connect to homepage with wrong email"""
 
         response = client.post('/showSummary', data={'email':'test@wrong-email.co'})
         assert response.headers["Location"] == "/"
 
 class TestBookCompetition():
 
-    """Classe effectuant tous les tests de la route '/book/<competition>/<club>'"""
+    """Class holding all the tests for the '/book/<competition>/<club>' route"""
 
     def test_should_error_if_club_or_comp_not_found(self, client, competitions_fixture,
                                                     clubs_fixture):
-        """Test vérifiant que le site renvoie bien une erreur quand on tente de renseigner
-        un mauvais nom de club ou de competition"""
+        """Checks that website returns an error if someone tries to forcefully
+        put wrong competition or club name as parameters when booking"""
 
         good_comp_name = competitions_fixture[0]['name']
         bad_comp = {"name":"test_name", "date":"2020-03-27 10:00:00", 
@@ -106,8 +98,8 @@ class TestBookCompetition():
 
     def test_should_connect_to_right_html(self, client, competitions_fixture,
                                                     clubs_fixture):
-        """Test vérifiant qu'on peut bien se connecter au site en indiquant un bon nom de
-        competition et un bon nom de club"""
+        """Checks that user can access booking page with right club name and 
+        competition name"""
 
         good_comp_name = competitions_fixture[0]['name']
         good_club_name = clubs_fixture[0]['name']
@@ -117,11 +109,11 @@ class TestBookCompetition():
 
 class TestPurchase():
 
-    """Classe effectuant tous les tests de la route '/purchasePlaces'"""
+    """Class holding all the tests for the '/purchasePlaces' route"""
 
     def setup_method(self, method):
-        """setup_method permettant d'enregistrer les 4 variables self.clubs, self.competitions,
-        self.test_time et self.current_time pour les tests suivants"""
+        """setup_method for saving the 4 variables self.clubs, self.competitions,
+        self.test_time and self.current_time for the next tests"""
 
         with open(CLUB_FILE, "r") as json_file:
             self.clubs = json.load(json_file)
@@ -138,8 +130,8 @@ class TestPurchase():
 
     def test_enough_points_to_book(self, client, competitions_fixture,
                                         clubs_fixture):
-        """Test vérifiant que le secrétaire d'un club puisse acheter une place dans une compétition
-        et que le nombre de points est bien déduit du portefeuille du club"""
+        """Checks that club's secretary can book a place in a competition and
+        that the number of points used is deducted from the club balance"""
 
         test_comp = competitions_fixture[0]["name"]
         test_club = clubs_fixture[0]["name"]
@@ -153,7 +145,6 @@ class TestPurchase():
                                                         'optionnal_time':self.test_time})
         assert response.status_code == 200
 
-        # on vérifie que les points on bien été déduits
         points_regex = re.compile(r'(Points available: )(\d+)')
         response_html = response.data.decode()
         mo = points_regex.search(response_html)
@@ -164,8 +155,8 @@ class TestPurchase():
 
     def test_enough_places_left_to_book(self, client, competitions_fixture,
                                         clubs_fixture):
-        """Test vérifiant que le secrétaire d'un club ne puisse pas acheter plus de places
-        qu'il y en a dans la compétition"""
+        """Checks that a club's secretary can't book more places than the competition's
+        number of places, the competitions balance should remain the same"""
 
         test_comp = competitions_fixture[0]["name"]
         test_club = clubs_fixture[0]["name"]
@@ -177,7 +168,6 @@ class TestPurchase():
                                                         'optionnal_time':self.test_time})
         assert response.status_code == 200
 
-        # On s'assure que le nombre de places dans la compétition est toujours le même
         places_regex = \
             re.compile(f'({test_comp}.*?Places: )(\\d+)', re.DOTALL)
         response_html = response.data.decode()
@@ -188,8 +178,8 @@ class TestPurchase():
 
     def test_competition_isnt_expired(self, client, competitions_fixture,
                                         clubs_fixture, app):
-        """Test vérifiant que la compétition à réserver n'est pas déjà passée, on utilise 
-        late_date_comp pour voir si on peut réserver des places pour une compétition future"""
+        """Checks that you can't book an expired competition and that you can book
+        a future competition"""
 
         test_comp = competitions_fixture[0]
         test_club = clubs_fixture[0]
@@ -223,8 +213,7 @@ class TestPurchase():
 
     def test_competitions_places_can_get_deducted(self, client, competitions_fixture, 
                                     clubs_fixture):
-        """Test vérifiant que le nombre de places d'une compétition diminue bien du
-        nombre de places réservées par un club"""
+        """Checks that places are deducted from a competition balance"""
 
         test_comp = competitions_fixture[0]["name"]
         test_club = clubs_fixture[0]["name"]
@@ -235,8 +224,7 @@ class TestPurchase():
                                                         'places':places_to_buy,
                                                         'optionnal_time':self.test_time})
         assert response.status_code == 200
-        # on vérifie que les points on bien été déduits du fichier clubs.json
-        # on vérifie que les points on bien été déduits du fichier
+
         places_regex = \
             re.compile(f'({test_comp}.*?Places: )(\\d+)', re.DOTALL)
         response_html = response.data.decode()
@@ -246,8 +234,7 @@ class TestPurchase():
 
     def test_cant_book_more_than_twelve_places(self, client, competitions_fixture,
                                     clubs_fixture):
-        """Test vérifiant que le secrétaire d'un club de peut pas réserver plus de 12
-        places en une fois"""
+        """Checks that a club's secretary can't book more than 12 places at once"""
 
         test_comp = competitions_fixture[0]["name"]
         test_club = clubs_fixture[0]["name"]
@@ -276,11 +263,10 @@ class TestPurchase():
 
 class TestLogout():
 
-    """Classe effectuant tous les tests de la route '/logout'"""
+    """Class holding all the tests for the '/logout' route"""
 
     def test_logout_and_redirect(self, client):
-        """Test vérifiant que la route /logout renvoie bien à la page d'acceuil"""
+        """Checks that the /logout route redirects user to index"""
 
-        # response = client.get('/logout', follow_redirects=True)
         response = client.get('/logout')
         assert response.status_code == 302
