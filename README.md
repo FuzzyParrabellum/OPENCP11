@@ -9,20 +9,26 @@ The clubs.json and competitions.json files are used as local database
 
 After downloading the project to your local repo, 
 
-    - <code>pip install -r requirements.txt</code> to install all necessary dependencies after activating a virtual env.
+    - **pip install -r requirements.txt** to install all necessary dependencies after activating a virtual env.
 
-    - <code>pytest tests</code> to run the pytest tests in the tests folder.
-
-    - <code>locust -f tests/performance_tests/locustfile.py</code> to run performance
-    tests with locust (needs the app to run before launching locust tests).
 
 **Step 2 - Run the app**
 
-    - <code>flask --app server run</code> to run the app, enter an email from
+    - **flask --app server run** to run the app, enter an email from
     the clubs.json file.
+    
+**Step3 - Run the tests**
+
+    - **pytest tests** to run the pytest tests in the tests folder.
+
+    - **locust -f tests/performance_tests/locustfile.py** to run performance
+    tests with locust (needs the app to run before launching locust tests).
 
 
-Old readme content from forked repo
+
+
+
+**Old readme content from forked repo**
 
 1. Why
 
